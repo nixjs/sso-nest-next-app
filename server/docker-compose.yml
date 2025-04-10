@@ -1,0 +1,38 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:14.2
+    container_name: nixjs_voting_postgres
+    ports:
+      - '5432:5432'
+    restart: always
+    env_file:
+      - ./.env
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: nixjs_voting_pgadmin
+    env_file:
+      - ./.env
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    ports:
+      - '5050:80'
+    networks:
+      - postgres
+    restart: unless-stopped
+  redis:
+    image: redis:latest
+    container_name: nixjs_voting_redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis:/data
+networks:
+  postgres:
+    driver: bridge
+volumes:
+  postgres-db:
+  pgadmin:
+  redis:

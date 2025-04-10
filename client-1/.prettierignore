@@ -1,0 +1,16 @@
+docs
+lib
+build
+dist
+out
+.next
+*.svg
+tsconfig.json
+*.ejs
+**/sources/**/*.json
+**/sources/**/*.scss
+**/apps/storybook-ui/
+**/apps/huula/
+**/apps/ehuula/
+**/apps/ehuula/
+**/packages/huula/
