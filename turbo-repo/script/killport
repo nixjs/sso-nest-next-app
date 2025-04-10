@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+echo "\033[1;33mTCP:"
+lsof -i -P -n | grep LISTEN
+echo "\033[0;34mPreparing to kill..."
+port=3000
+i=0
+max=10
+while [ $i -lt $max ]; do
+    v=$((3000 + $i))
+    declare Existed=$(lsof -i :$v)
+    if [[ $Existed ]]; then
+        echo "\033[0;37mPort $v: \033[0;32mActivate\033[0;37m"
+        kill -9 $(lsof -t -i:$v)
+        echo "\033[0;31m> Killed\033[0;37m"
+    fi
+    true $((i++))
+done
+echo "\033[0;34mDone"
