@@ -35,7 +35,7 @@ export class UserService {
             }
         )
 
-        let client = await this.clientService.findOne(clientId || '')
+        const client = await this.clientService.findOne(clientId || '')
 
         if (!client) throw new BadRequestException('invalid clientId')
 

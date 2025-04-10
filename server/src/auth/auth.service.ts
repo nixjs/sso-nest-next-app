@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config'
 import { InjectRedis } from '@nestjs-modules/ioredis'
 import Redis from 'ioredis'
 import * as crypto from 'crypto'
+import { User } from '../user/entities/user.entity'
 
 @Injectable()
 export class AuthService {
@@ -37,10 +38,10 @@ export class AuthService {
 
     async getClientSession(sessionId: string): Promise<{ clientId: string; clientSecret: string; redirectUri: string } | null> {
         const clientData = await this.redis.get(`client_session:${sessionId}`)
-        return clientData ? JSON.parse(clientData) : null
+        return clientData ? (JSON.parse(clientData) as { clientId: string; clientSecret: string; redirectUri: string }) : null
     }
 
-    async login(user: any, client: Client) {
+    async login(user: User, client: Client) {
         const payload = { sub: user.id, email: user.email, iss: this.configService.get<string>('endpoint_api') }
         const accessToken = this.jwtService.sign(payload, {
             secret: this.configService.get<string>('jwt.access_token'),
@@ -83,16 +84,6 @@ export class AuthService {
         return {
             access_token: newAccessToken,
             session_id: encryptedSessionId
-        }
-    }
-
-    verifyToken(token: string, type: 'access' | 'refresh') {
-        try {
-            const secret =
-                type === 'access' ? this.configService.get<string>('jwt.access_token') : this.configService.get<string>('jwt.refresh_token')
-            return this.jwtService.verify(token, { secret })
-        } catch (error) {
-            throw new BadRequestException('Invalid token')
         }
     }
 
@@ -142,7 +133,10 @@ export class AuthService {
     }
 
     // Thêm phương thức để tạo token tạm thời
-    async generateTemporaryToken(sessionId: string): Promise<string> {
+    /**
+     * @deprecated
+     */
+    generateTemporaryToken(sessionId: string): string {
         const payload = { sessionId }
         return this.jwtService.sign(payload, {
             secret: this.configService.get<string>('session_encryption_key'),
@@ -151,6 +145,9 @@ export class AuthService {
     }
 
     // Thêm phương thức để kiểm tra phiên và tạo token mới
+    /**
+     * @deprecated
+     */
     async checkSessionWithCookie(clientId: string, clientSecret: string, sessionId: string) {
         const decryptedSessionId = this.verifySessionToken(sessionId)
         const userId = await this.usersService.getUserIdBySessionId(decryptedSessionId)
@@ -159,9 +156,8 @@ export class AuthService {
         const refreshToken = await this.usersService.getRefreshTokenByUserId(userId)
         if (!refreshToken) throw new NotFoundException('Refresh token not found')
 
-        const decoded = this.verifyToken(refreshToken, 'refresh')
         const isValid = await this.usersService.validateRefreshToken(userId, refreshToken)
-        if (!isValid)  throw new BadRequestException('Invalid refresh token')
+        if (!isValid) throw new BadRequestException('Invalid refresh token')
 
         const user = await this.usersService.findById(userId)
         if (!user) throw new NotFoundException('User not found')
@@ -189,16 +185,18 @@ export class AuthService {
         const payload = { sessionId }
         return this.jwtService.sign(payload, {
             secret: this.configService.get<string>('session_encryption_key'),
-            expiresIn: '7d' // Đồng bộ với thời gian sống của refresh_token
+            expiresIn: this.configService.get<string>('refresh_token_expires_in') // Đồng bộ với thời gian sống của refresh_token
         })
     }
 
     private verifySessionToken(sessionToken: string): string {
         try {
-            const decoded = this.jwtService.verify(sessionToken, { secret: this.configService.get<string>('session_encryption_key') })
+            const decoded = this.jwtService.verify<{ sessionId: string }>(sessionToken, {
+                secret: this.configService.get<string>('session_encryption_key')
+            })
             return decoded.sessionId
         } catch (error) {
-            throw new Error('Session token không hợp lệ')
+            throw new Error('Invalid session token')
         }
     }
 }

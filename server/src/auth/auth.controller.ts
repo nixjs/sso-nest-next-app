@@ -47,7 +47,7 @@ export class AuthController {
         const user = await this.userService.validateUser(loginDto.identifier, loginDto.password)
         if (!user) throw new BadRequestException('Invalid identifier or password')
 
-        const { redirect_uri, access_token, session_id } = await this.authService.login(user, client)
+        const { redirect_uri, session_id } = await this.authService.login(user, client)
 
         res.cookie('session_id', session_id, {
             httpOnly: true,
@@ -74,9 +74,9 @@ export class AuthController {
         res.json({ access_token: tokens.access_token, session_id: tokens.session_id })
     }
 
-    @UseGuards(JwtAuthGuard) 
+    @UseGuards(JwtAuthGuard)
     @Get('userinfo')
-    async getUserInfo(@Req() req: Request) {
+    getUserInfo(@Req() req: Request) {
         const user = req.user as User
         return {
             id: user.id,
@@ -122,7 +122,7 @@ export class AuthController {
         <body class="min-h-screen flex items-center justify-center bg-gray-100">
           <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md text-center">
             <h2 class="text-2xl font-bold mb-4 text-red-600">Email verification failed!</h2>
-            <p class="mb-6">${error.message}</p>
+            <p class="mb-6">${error?.message}</p>
           </div>
         </body>
         </html>
@@ -144,7 +144,7 @@ export class AuthController {
 
             res.json({ access_token: tokens.access_token, session_id: tokens.session_id })
         } catch (error) {
-            res.status(401).json({ message: error.message })
+            res.status(401).json({ message: error })
         }
     }
 
@@ -162,12 +162,12 @@ export class AuthController {
                 return res.redirect(`/auth/login?client_id=${clientId}&client_secret=${clientSecret}&redirect_uri=${redirectUri}`)
             }
 
-            const tokens = await this.authService.checkSessionWithCookie(clientId, clientSecret, sessionId)
+            const tokens = await this.authService.checkSessionWithCookie(clientId, clientSecret, String(sessionId))
 
-            const tempToken = await this.authService.generateTemporaryToken(tokens.session_id)
+            const tempToken = this.authService.generateTemporaryToken(tokens.session_id)
 
             res.redirect(`${redirectUri}?access_token=${tokens.access_token}&temp_token=${tempToken}&session_id=${tokens.session_id}`)
-        } catch (error) {
+        } catch (_error) {
             res.redirect(`/auth/login?client_id=${clientId}&client_secret=${clientSecret}&redirect_uri=${redirectUri}`)
         }
     }

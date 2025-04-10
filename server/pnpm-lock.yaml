@@ -145,6 +145,9 @@ devDependencies:
   '@types/node':
     specifier: ^20.17.30
     version: registry.npmjs.org/@types/node@20.17.30
+  '@types/nodemailer':
+    specifier: ^6.4.17
+    version: registry.npmjs.org/@types/nodemailer@6.4.17
   '@types/passport-jwt':
     specifier: ^4.0.1
     version: registry.npmjs.org/@types/passport-jwt@4.0.1
@@ -2481,6 +2484,14 @@ packages:
     version: 20.17.30
     dependencies:
       undici-types: registry.npmjs.org/undici-types@6.19.8
+
+  registry.npmjs.org/@types/nodemailer@6.4.17:
+    resolution: {integrity: sha512-I9CCaIp6DTldEg7vyUTZi8+9Vo0hi1/T8gv3C89yk1rSAAzoKQ8H8ki/jBYJSFoH/BisgLP8tkZMlQ91CIquww==, registry: https://registry.npmjs.com/, tarball: https://registry.npmjs.org/@types/nodemailer/-/nodemailer-6.4.17.tgz}
+    name: '@types/nodemailer'
+    version: 6.4.17
+    dependencies:
+      '@types/node': registry.npmjs.org/@types/node@20.17.30
+    dev: true
 
   registry.npmjs.org/@types/oauth@0.9.6:
     resolution: {integrity: sha512-H9TRCVKBNOhZZmyHLqFt9drPM9l+ShWiqqJijU1B8P3DX3ub84NjxDuy+Hjrz+fEca5Kwip3qPMKNyiLgNJtIA==, registry: https://registry.npmjs.com/, tarball: https://registry.npmjs.org/@types/oauth/-/oauth-0.9.6.tgz}
