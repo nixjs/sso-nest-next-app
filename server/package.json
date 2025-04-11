@@ -63,7 +63,8 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "typeorm": "^0.3.22",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "viem": "^2.26.3"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",

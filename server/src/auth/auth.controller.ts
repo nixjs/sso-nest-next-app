@@ -6,11 +6,14 @@ import { LoginDto } from './dto/auth.dto'
 import { JwtAuthGuard } from './jwt-auth.guard'
 import { User } from '../user/entities/user.entity'
 import { ConfigService } from '@nestjs/config'
+import { getAccessToken } from 'src/utils/jwt'
+import { AuthWalletService } from './auth.wallet.service'
 
 @Controller('auth')
 export class AuthController {
     constructor(
         private authService: AuthService,
+        private authWalletService: AuthWalletService,
         private userService: UserService,
         private readonly configService: ConfigService
     ) {}
@@ -27,11 +30,44 @@ export class AuthController {
         const clientSessionId = await this.authService.storeClientSession(clientId, clientSecret, redirectUri)
 
         res.send(`
-           <form method="POST" action="/auth/login?client_session_id=${clientSessionId}">
-        <input type="text" name="identifier" placeholder="Email or username" required />
-        <input type="password" name="password" placeholder="Password" required />
-        <button type="submit">Login</button>
-      </form>
+          <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Login</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+      </head>
+      <body class="bg-gray-100">
+        <form
+          method="POST"
+          action="/auth/login?client_session_id=${clientSessionId}"
+          class="flex flex-col space-y-4 max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-lg"
+        >
+            <h2 class="text-2xl font-semibold text-gray-800 text-center">Login to Your Account</h2>
+          <input
+            type="text"
+            name="identifier"
+            placeholder="Email or username"
+            required
+            class="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            required
+            class="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            class="p-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Login
+          </button>
+        </form>
+      </body>
+      </html>
     `)
     }
 
@@ -82,8 +118,27 @@ export class AuthController {
             id: user.id,
             email: user.email,
             username: user.username,
-            name: user.name
+            name: user.name,
+            walletAddress: user.walletAddress
         }
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('connect-wallet')
+    async connectWallet(@Req() req: Request): Promise<string> {
+        const user = req.user as User
+        return await this.authWalletService.generateNonce(user.id)
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('verify-wallet')
+    async verifyWallet(
+        @Body('signature') signature: string,
+        @Body('wallet_address') walletAddress: string,
+        @Req() req: Request
+    ): Promise<string> {
+        const user = req.user as User
+        return await this.authWalletService.verifyWallet(user.id, signature, walletAddress)
     }
 
     @Get('verify')

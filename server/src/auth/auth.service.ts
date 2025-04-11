@@ -15,7 +15,7 @@ export class AuthService {
     constructor(
         @InjectRepository(Client)
         private clientRepository: Repository<Client>,
-        private usersService: UserService,
+        private userService: UserService,
         @InjectRedis() private readonly redis: Redis,
         private jwtService: JwtService,
         private readonly configService: ConfigService
@@ -51,7 +51,7 @@ export class AuthService {
             expiresIn: this.configService.get<string>('jwt.refresh_token_expires_in')
         })
 
-        const sessionId = await this.usersService.saveRefreshToken(user.id, refreshToken)
+        const sessionId = await this.userService.saveRefreshToken(user.id, refreshToken)
         const encryptedSessionId = this.createSessionToken(sessionId)
 
         return {
@@ -62,10 +62,10 @@ export class AuthService {
     }
 
     async refreshToken(userId: string, refreshToken: string) {
-        const isValid = await this.usersService.validateRefreshToken(userId, refreshToken)
+        const isValid = await this.userService.validateRefreshToken(userId, refreshToken)
         if (!isValid) throw new BadRequestException('Invalid refresh token')
 
-        const user = await this.usersService.findById(userId)
+        const user = await this.userService.findById(userId)
         if (!user) throw new NotFoundException('User not found')
 
         const payload = { sub: user.id, email: user.email, iss: this.configService.get<string>('endpoint_api') }
@@ -78,7 +78,7 @@ export class AuthService {
             expiresIn: this.configService.get<string>('jwt.refresh_token_expires_in')
         })
 
-        const sessionId = await this.usersService.saveRefreshToken(user.id, newRefreshToken)
+        const sessionId = await this.userService.saveRefreshToken(user.id, newRefreshToken)
         const encryptedSessionId = this.createSessionToken(sessionId)
 
         return {
@@ -91,16 +91,16 @@ export class AuthService {
         const client = await this.validateClient(clientId, clientSecret)
 
         const sessionDecoded = this.verifySessionToken(sessionId)
-        const userId = await this.usersService.getUserIdBySessionId(sessionDecoded)
+        const userId = await this.userService.getUserIdBySessionId(sessionDecoded)
         if (!userId) throw new BadRequestException('Invalid session')
 
-        const refreshToken = await this.usersService.getRefreshTokenByUserId(userId)
+        const refreshToken = await this.userService.getRefreshTokenByUserId(userId)
         if (!refreshToken) throw new NotFoundException('Refresh token not found')
 
-        const isValid = await this.usersService.validateRefreshToken(userId, refreshToken)
+        const isValid = await this.userService.validateRefreshToken(userId, refreshToken)
         if (!isValid) throw new BadRequestException('Invalid refresh token')
 
-        const user = await this.usersService.findById(userId)
+        const user = await this.userService.findById(userId)
         if (!user) throw new NotFoundException('User not found')
 
         const payload = { sub: user.id, email: user.email, iss: this.configService.get<string>('endpoint_api') }
@@ -113,7 +113,7 @@ export class AuthService {
             expiresIn: this.configService.get<string>('jwt.refresh_token_expires_in')
         })
 
-        const newSessionId = await this.usersService.saveRefreshToken(user.id, newRefreshToken)
+        const newSessionId = await this.userService.saveRefreshToken(user.id, newRefreshToken)
         const encryptedSessionId = this.createSessionToken(newSessionId)
 
         return {
@@ -125,7 +125,7 @@ export class AuthService {
 
     async logout(sessionId: string) {
         const decryptedSessionId = this.verifySessionToken(sessionId)
-        const userId = await this.usersService.getUserIdBySessionId(decryptedSessionId)
+        const userId = await this.userService.getUserIdBySessionId(decryptedSessionId)
         if (userId) {
             await this.redis.del(`refresh_token:${userId}`)
             await this.redis.del(`session:${sessionId}`)
@@ -150,16 +150,16 @@ export class AuthService {
      */
     async checkSessionWithCookie(clientId: string, clientSecret: string, sessionId: string) {
         const decryptedSessionId = this.verifySessionToken(sessionId)
-        const userId = await this.usersService.getUserIdBySessionId(decryptedSessionId)
+        const userId = await this.userService.getUserIdBySessionId(decryptedSessionId)
         if (!userId) throw new BadRequestException('Invalid session')
 
-        const refreshToken = await this.usersService.getRefreshTokenByUserId(userId)
+        const refreshToken = await this.userService.getRefreshTokenByUserId(userId)
         if (!refreshToken) throw new NotFoundException('Refresh token not found')
 
-        const isValid = await this.usersService.validateRefreshToken(userId, refreshToken)
+        const isValid = await this.userService.validateRefreshToken(userId, refreshToken)
         if (!isValid) throw new BadRequestException('Invalid refresh token')
 
-        const user = await this.usersService.findById(userId)
+        const user = await this.userService.findById(userId)
         if (!user) throw new NotFoundException('User not found')
 
         const payload = { sub: user.id, email: user.email, iss: this.configService.get<string>('endpoint_api') }
@@ -172,7 +172,7 @@ export class AuthService {
             expiresIn: this.configService.get<string>('jwt.refresh_token_expires_in')
         })
 
-        const newSessionId = await this.usersService.saveRefreshToken(user.id, newRefreshToken)
+        const newSessionId = await this.userService.saveRefreshToken(user.id, newRefreshToken)
         const encryptedSessionId = this.createSessionToken(newSessionId)
 
         return {
@@ -185,7 +185,7 @@ export class AuthService {
         const payload = { sessionId }
         return this.jwtService.sign(payload, {
             secret: this.configService.get<string>('session_encryption_key'),
-            expiresIn: this.configService.get<string>('refresh_token_expires_in') // Đồng bộ với thời gian sống của refresh_token
+            expiresIn: this.configService.get<string>('jwt.refresh_token_expires_in') // Đồng bộ với thời gian sống của refresh_token
         })
     }
 

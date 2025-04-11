@@ -12,6 +12,7 @@ import { ConfigService } from '@nestjs/config'
 import { getVerificationEmailTemplate } from './helper'
 import { ClientService } from '../client/client.service'
 import * as crypto from 'crypto'
+import { UpdateUserDto } from './dto/update-user.dto'
 
 @Injectable()
 export class UserService {
@@ -102,6 +103,14 @@ export class UserService {
         return this.userRepository.findOne({ where: { id } })
     }
 
+    async update(userId: string, updateUserDto: UpdateUserDto) {
+        await this.userRepository.update(userId, {
+            ...updateUserDto,
+            updatedAt: ~~(Date.now() / 1000)
+        })
+        return this.userRepository.findOne({ where: { id: userId } })
+    }
+
     async saveRefreshToken(userId: string, refreshToken: string) {
         const sessionId = crypto.randomBytes(16).toString('hex')
         const time = parseInt(this.configService.get<string>('jwt.refresh_token_expires_in') || '7', 10)
@@ -122,5 +131,11 @@ export class UserService {
 
     async getRefreshTokenByUserId(userId: string): Promise<string | null> {
         return this.redis.get(`refresh_token:${userId}`)
+    }
+
+    verifyAndDecodedToken(token: string, type: 'access' | 'refresh') {
+        return this.jwtService.verify<{ sub: string; email: string; iss: string }>(token, {
+            secret: this.configService.get<string>(type === 'access' ? 'jwt.access_token' : 'jwt.refresh_token')
+        })
     }
 }

@@ -7,6 +7,7 @@ import { Client } from '../client/entities/client.entity'
 import { UserModule } from '../user/user.module'
 import { User } from '../user/entities/user.entity'
 import { JwtStrategy } from './jwt.strategy'
+import { AuthWalletService } from './auth.wallet.service'
 
 @Module({
     imports: [
@@ -15,6 +16,6 @@ import { JwtStrategy } from './jwt.strategy'
         PassportModule.register({ defaultStrategy: 'jwt' }) // Đăng ký Passport với chiến lược mặc định là JWT
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy]
+    providers: [AuthService, AuthWalletService, JwtStrategy]
 })
 export class AuthModule {}

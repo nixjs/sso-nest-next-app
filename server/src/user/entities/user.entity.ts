@@ -18,6 +18,9 @@ export class User {
     @Column({ nullable: true })
     name: string
 
+    @Column({ nullable: true })
+    walletAddress: string
+
     @Column({ default: false })
     isVerified: boolean
 

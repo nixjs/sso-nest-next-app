@@ -19,7 +19,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     async validate(payload: any) {
-        const user = await this.userService.findById(payload.sub)
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        const user = await this.userService.findById(payload?.sub)
         if (!user) {
             throw new UnauthorizedException('User does not exist')
         }
